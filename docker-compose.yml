@@ -1,12 +1,23 @@
 version: '3.8'
 
 services:
+  frontend:
+    build:
+      context: frontend  # Путь к директории с Dockerfile фронтенда
+    ports:
+      - "3000:80"  # Порт хоста:порт контейнера
+    depends_on:
+      - web
+    networks:
+      - frontend
+      - backend
+
   web:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: .  # Путь к директории с Dockerfile бэкенда
+      dockerfile: backend/Dockerfile
     env_file:
-      - .env
+      - backend/.env
     ports:
       - "8000:8000"
     depends_on:
@@ -18,7 +29,7 @@ services:
   db:
     image: postgres:15
     env_file:
-      - .env
+      - backend/.env
     ports:
       - "5432:5432"
     volumes:
@@ -36,10 +47,10 @@ services:
   celery:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: backend/Dockerfile
     command: ["celery", "-A", "src.app.tasks.send_email.celery", "worker", "--loglevel=info"]
     env_file:
-      - .env
+      - backend/.env
     depends_on:
       - redis
       - web
@@ -50,4 +61,5 @@ volumes:
   postgres_data:
 
 networks:
+  frontend:
   backend:

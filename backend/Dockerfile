@@ -8,7 +8,7 @@ ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 
 # Копируем зависимости Poetry
-COPY pyproject.toml poetry.lock* /app/
+COPY backend/pyproject.toml backend/poetry.lock* /app/
 
 # Устанавливаем Poetry
 RUN pip install --no-cache-dir poetry
@@ -16,9 +16,8 @@ RUN pip install --no-cache-dir poetry
 # Устанавливаем зависимости с помощью Poetry
 RUN poetry config virtualenvs.create false && poetry install --only main --no-interaction --no-ansi --no-root
 
-
 # Копируем остальные файлы проекта
-COPY . /app/
+COPY backend/. /app/
 
 # Устанавливаем переменную для FastAPI
 ENV UVICORN_PORT=8000
