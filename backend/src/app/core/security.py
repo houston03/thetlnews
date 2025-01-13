@@ -1,5 +1,5 @@
 from datetime import timedelta, datetime
-from jose import jwt
+import jwt  # Замените на pyjwt
 from src.app.core.config import settings
 
 def create_access_token(data: dict, expires_delta: timedelta = None) -> str:

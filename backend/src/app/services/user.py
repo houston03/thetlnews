@@ -1,25 +1,19 @@
+import bcrypt
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from passlib.context import CryptContext
 from src.app.models.auth import User as UserModel
 from src.app.schemas.auth import UserCreate
 from fastapi import Depends, HTTPException, status
-from jose import jwt, JWTError
+import jwt
 from src.app.core.config import settings
 from src.app.core.database import get_db
 
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-
 def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
-
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
 def verify_password(password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(password, hashed_password)
-
+    return bcrypt.checkpw(password.encode('utf-8'), hashed_password.encode('utf-8'))
 
 async def create_user(db: AsyncSession, user: UserCreate):
     # Проверяем, есть ли пользователь с таким email
@@ -39,14 +33,15 @@ async def create_user(db: AsyncSession, user: UserCreate):
     await db.refresh(db_user)  # Обновление объекта
     return db_user
 
-
 async def get_current_user(token: str, db: AsyncSession = Depends(get_db)):
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         email: str = payload.get("sub")
         if email is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
-    except JWTError:
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has expired")
+    except jwt.InvalidTokenError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
     result = await db.execute(select(UserModel).filter(UserModel.email == email))
@@ -55,7 +50,6 @@ async def get_current_user(token: str, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User not found")
 
     return user
-
 
 async def create_admin_user(db: AsyncSession, email: str, password: str):
     result = await db.execute(select(UserModel).filter(UserModel.email == email))
@@ -72,14 +66,15 @@ async def create_admin_user(db: AsyncSession, email: str, password: str):
     await db.commit()
     await db.refresh(admin_user)
 
-
 async def get_current_admin(token: str, db: AsyncSession = Depends(get_db)):
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         email: str = payload.get("sub")
         if email is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
-    except JWTError:
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has expired")
+    except jwt.InvalidTokenError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
     result = await db.execute(select(UserModel).filter(UserModel.email == email))
@@ -88,7 +83,6 @@ async def get_current_admin(token: str, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
 
     return user
-
 
 async def authenticate_user(db: AsyncSession, email: str, password: str):
     result = await db.execute(select(UserModel).filter(UserModel.email == email))

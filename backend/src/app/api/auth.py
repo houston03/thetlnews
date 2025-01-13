@@ -17,7 +17,7 @@ auth_router = APIRouter(prefix="/auth", tags=["Authentication"])
 async def register_user(user: UserCreate, db: AsyncSession = Depends(get_db)):
     try:
         logger.info(f"Registering user: {user.email}")
-        created_user = await create_user(db, user)  # Используем await
+        await create_user(db, user)  # Используем await
 
         send_email.delay(
             to_email=user.email,
