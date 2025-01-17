@@ -8,9 +8,17 @@ from src.app.core.database import async_session
 from src.app.api.admin import admin_router
 from src.app.api.cart import cart_router
 from src.app.api.promocode import promocode_router
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # Замените на адрес фронтенда
+    allow_credentials=True,
+    allow_methods=["*"],  # Разрешите все методы (GET, POST, OPTIONS и т.д.)
+    allow_headers=["*"],  # Разрешите все заголовки
+)
 @app.on_event("startup")
 async def startup_event():
     async with engine.begin() as conn:
