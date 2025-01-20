@@ -6,6 +6,9 @@ from src.app.schemas.auth import UserCreate, LoginRequest, Token
 from src.app.services.user import create_user, authenticate_user
 from src.app.core.security import create_access_token
 from src.app.tasks.send_email import send_email
+
+# from src.app.models import User
+# from src.app.schemas.user import UserProfileResponse
 import logging
 
 logger = logging.getLogger(__name__)
@@ -42,3 +45,10 @@ async def login(login_request: LoginRequest, db: AsyncSession = Depends(get_db))
     access_token_expires = timedelta(minutes=30)
     access_token = create_access_token(data={"sub": user.email}, expires_delta=access_token_expires)
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+# @auth_router.get("/profile", response_model=UserProfileResponse)
+# async def get_user_profile(
+#     current_user: User = Depends(get_current_user),
+# ):
+#     return current_user

@@ -5,21 +5,30 @@ const UserProfile = () => {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // Замените на ваш API для получения данных пользователя
     const fetchUserProfile = async () => {
       try {
-        const response = await axios.get('http://localhost:8000/auth/profile');
-        setUser(response.data);
+        const token = localStorage.getItem('token'); // Проверяем токен
+        if (!token) {
+          alert('Unauthorized access');
+          window.location.href = '/auth'; // Редирект на страницу авторизации
+          return;
+        }
+
+        const response = await axios.get('http://localhost:8000/auth/profile', {
+          headers: { Authorization: `Bearer ${token}` }, // Отправляем токен
+        });
+        setUser(response.data); // Устанавливаем данные пользователя
       } catch (error) {
-        alert('Failed to fetch user profile');
+        alert('Failed to fetch user profile'); // Обработка ошибок
+        console.error(error);
       }
     };
 
-    fetchUserProfile();
-  }, []);
+    fetchUserProfile(); // Вызываем функцию
+  }, []); // Зависимость пустая — эффект выполняется только при монтировании компонента
 
   if (!user) {
-    return <div>Loading...</div>;
+    return <div>Loading...</div>; // Показ загрузки, пока данные не загружены
   }
 
   return (
